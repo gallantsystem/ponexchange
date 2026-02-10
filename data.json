@@ -1,0 +1,13 @@
+{
+  "message": "success",
+  "data": [
+    {
+      "id": 2,
+      "manufacturer": "Samsung",
+      "model": "플립4",
+      "grade": "C",
+      "storage": 256,
+      "price": 70000
+    }
+  ]
+}
