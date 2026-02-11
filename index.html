@@ -9,17 +9,27 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans KR', sans-serif; scroll-behavior: smooth; }
+        
         .hero-section {
-            background-image: linear-gradient(rgba(30, 64, 175, 0.8), rgba(30, 64, 175, 0.8)), url('https://images.unsplash.com/photo-1556656793-062ff987b50d?auto=format&fit=crop&q=80&w=2070');
-            background-size: cover;
-            background-position: center;
+            position: relative;
+            background-color: #0f172a;
+            overflow: hidden;
         }
+        
+        .hero-image-bg {
+            position: absolute;
+            inset: 0;
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+            opacity: 0.4;
+        }
+
         .feature-card:hover { transform: translateY(-8px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         
-        /* 전광판 애니메이션 */
         @keyframes ticker {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
@@ -43,19 +53,48 @@
             font-weight: 500;
         }
         .ticker-item .price { color: #facc15; margin-left: 8px; font-weight: 700; }
-
-        .step-line::after {
-            content: '';
-            position: absolute;
-            top: 50px;
-            left: 50%;
-            width: 100%;
-            height: 2px;
-            background: #e2e8f0;
-            z-index: 0;
-        }
-        @media (max-width: 768px) { .step-line::after { display: none; } }
     </style>
+    <script>
+        const apiKey = "";
+        const API_URL = 'https://predoubtful-unomnisciently-tracee.ngrok-free.dev/api/phones';
+
+        function handleImageError(img, type) {
+            console.log(`${type} 이미지 로컬 로드 실패. AI 생성을 시도합니다.`);
+            const prompts = {
+                'hero': "A sleek, high-end showroom of modern smartphones, organized on glass displays, premium lighting, high quality, commercial photography style, 4k.",
+                'middle': "Close up of a professional hand checking a clean high-end smartphone with a white background, minimalist tech aesthetic, bright and airy.",
+                'cs': "A friendly customer support person wearing a headset, smiling, in a bright modern office, technology background, blurred office setting, clean."
+            };
+            generateImage(prompts[type], img.id);
+        }
+
+        async function generateImage(prompt, elementId) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        instances: [{ prompt: prompt }],
+                        parameters: { sampleCount: 1 }
+                    })
+                });
+                const result = await response.json();
+                if (result.predictions && result.predictions[0]) {
+                    document.getElementById(elementId).src = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                } else {
+                    throw new Error("No predictions");
+                }
+            } catch (e) {
+                console.error("AI 생성 실패:", e);
+                const fallbacks = {
+                    'hero-bg-img': 'https://images.unsplash.com/photo-1556656793-062ff987b50d?auto=format&fit=crop&q=80&w=2070',
+                    'middle-banner-img': 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&q=80&w=2070',
+                    'cs-service-img': 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=2070'
+                };
+                document.getElementById(elementId).src = fallbacks[elementId];
+            }
+        }
+    </script>
 </head>
 <body class="bg-gray-50 text-gray-900">
 
@@ -67,7 +106,6 @@
             </div>
             <div class="hidden lg:flex space-x-10 font-medium text-gray-600">
                 <a href="#about" class="hover:text-blue-600 transition">서비스 안내</a>
-                <a href="#process" class="hover:text-blue-600 transition">매입 절차</a>
                 <a href="#price-list" class="hover:text-blue-600 transition">매입 시세표</a>
                 <a href="#contact" class="hover:text-blue-600 transition">내 폰 시세조회</a>
             </div>
@@ -78,11 +116,12 @@
     </nav>
 
     <!-- Hero Section -->
-    <header class="hero-section text-white py-24 lg:py-40">
-        <div class="container mx-auto px-6">
+    <header class="hero-section text-white py-24 lg:py-40 relative">
+        <img id="hero-bg-img" src="main_banner.png" onerror="handleImageError(this, 'hero')" alt="중고폰 매매 이미지" class="hero-image-bg">
+        <div class="container mx-auto px-6 relative z-10">
             <div class="max-w-3xl">
-                <span class="inline-block bg-blue-500/30 text-blue-100 px-4 py-1.5 rounded-full text-sm font-bold mb-6 backdrop-blur-sm border border-blue-400/30">
-                    대한민국 중고폰 매입 1위 지향
+                <span class="inline-block bg-blue-500/40 text-blue-100 px-4 py-1.5 rounded-full text-sm font-bold mb-6 backdrop-blur-md border border-blue-400/30">
+                    2026년형 중고폰 매입 솔루션
                 </span>
                 <h1 class="text-5xl lg:text-7xl font-extrabold mb-8 leading-[1.15]">
                     서랍 속 잠자는 폰,<br><span class="text-yellow-400">최고의 가치</span>로 변신
@@ -94,159 +133,83 @@
                     <a href="#price-list" class="bg-blue-600 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-blue-700 shadow-xl transition-all hover:-translate-y-1">
                         오늘의 시세 확인
                     </a>
-                    <a href="https://open.kakao.com/me/ponexchange" target="_blank" class="bg-white text-blue-900 px-10 py-5 rounded-2xl font-bold text-lg hover:bg-gray-100 shadow-xl transition-all hover:-translate-y-1 flex items-center justify-center gap-2">
-                        <i class="fab fa-kakao text-yellow-500"></i> 카톡 1분 견적
-                    </a>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- 실시간 시세 전광판 (Ticker) -->
+    <!-- 실시간 시세 전광판 -->
     <div class="ticker-container border-y border-blue-900/20">
         <div class="ticker-content" id="ticker-content">
-            <!-- JS로 데이터 삽입 -->
-            <span class="ticker-item">시세를 불러오는 중입니다...</span>
+            <span class="ticker-item">최신 매입 시세를 불러오고 있습니다...</span>
         </div>
     </div>
 
-    <!-- Why Choose Us Section -->
-    <section id="about" class="py-24 bg-white relative overflow-hidden">
-        <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
-        <div class="container mx-auto px-6 relative z-10">
+    <!-- Why Choose Us -->
+    <section id="about" class="py-24 bg-white">
+        <div class="container mx-auto px-6">
             <div class="text-center mb-20">
                 <h2 class="text-4xl font-extrabold text-gray-900 mb-6">차원이 다른 중고폰 거래</h2>
                 <p class="text-gray-500 text-lg">많은 분들이 '중고폰거래소'를 선택하는 이유입니다.</p>
             </div>
             <div class="grid lg:grid-cols-3 gap-12">
                 <div class="feature-card group p-10 bg-gray-50 rounded-[2.5rem] border border-gray-100 transition-all">
-                    <div class="w-20 h-20 bg-blue-600 text-white rounded-3xl flex items-center justify-center mb-8 shadow-lg shadow-blue-200 group-hover:rotate-6 transition-transform">
-                        <i class="fas fa-chart-line text-3xl"></i>
+                    <div class="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                        <i class="fas fa-chart-line text-2xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">최고가 매입 시스템</h3>
-                    <p class="text-gray-600 leading-relaxed">유통 거품을 완전히 제거했습니다. 직접 매입하여 고객님께 돌아가는 혜택을 극대화했습니다.</p>
+                    <h3 class="text-2xl font-bold mb-4">최고가 매입</h3>
+                    <p class="text-gray-600 leading-relaxed">유통 마진을 최소화하여 고객님께 업계 최고 수준의 매입가를 제안합니다.</p>
                 </div>
                 <div class="feature-card group p-10 bg-gray-50 rounded-[2.5rem] border border-gray-100 transition-all">
-                    <div class="w-20 h-20 bg-indigo-600 text-white rounded-3xl flex items-center justify-center mb-8 shadow-lg shadow-indigo-200 group-hover:rotate-6 transition-transform">
-                        <i class="fas fa-user-shield text-3xl"></i>
+                    <div class="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                        <i class="fas fa-user-shield text-2xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">철저한 데이터 파기</h3>
-                    <p class="text-gray-600 leading-relaxed">개인정보 유출 걱정은 이제 그만. 군사 표준 등급의 데이터 완전 파기 솔루션을 무상 제공합니다.</p>
+                    <h3 class="text-2xl font-bold mb-4">완벽 데이터 삭제</h3>
+                    <p class="text-gray-600 leading-relaxed">매입 즉시 전문 솔루션을 통해 모든 데이터를 영구 파기하여 안심할 수 있습니다.</p>
                 </div>
                 <div class="feature-card group p-10 bg-gray-50 rounded-[2.5rem] border border-gray-100 transition-all">
-                    <div class="w-20 h-20 bg-teal-600 text-white rounded-3xl flex items-center justify-center mb-8 shadow-lg shadow-teal-200 group-hover:rotate-6 transition-transform">
-                        <i class="fas fa-hand-holding-usd text-3xl"></i>
+                    <div class="w-16 h-16 bg-teal-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                        <i class="fas fa-hand-holding-usd text-2xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">당일 초고속 입금</h3>
-                    <p class="text-gray-600 leading-relaxed">검수 완료 후 승인 즉시 입금됩니다. 입금 지연으로 인한 불안감을 완벽하게 해소해 드립니다.</p>
+                    <h3 class="text-2xl font-bold mb-4">당일 즉시 입금</h3>
+                    <p class="text-gray-600 leading-relaxed">검수가 완료되면 복잡한 절차 없이 등록하신 계좌로 당일 입금해 드립니다.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Process Section -->
-    <section id="process" class="py-24 bg-gray-50">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-20">
-                <h2 class="text-4xl font-extrabold text-gray-900 mb-6">거래 진행은 이렇게</h2>
-                <p class="text-gray-500 text-lg">복잡한 절차 없이 아주 간단합니다.</p>
-            </div>
-            <div class="flex flex-col md:flex-row justify-between items-start gap-12 relative">
-                <div class="flex-1 text-center group step-line relative">
-                    <div class="relative z-10 inline-block mb-8">
-                        <div class="w-24 h-24 bg-white shadow-xl rounded-[2rem] flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 border border-gray-100">
-                            <i class="fas fa-mobile-alt text-3xl"></i>
-                        </div>
-                        <span class="absolute -bottom-2 right-0 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-4 border-gray-50">01</span>
-                    </div>
-                    <h4 class="font-bold text-xl mb-3 text-gray-800">모델 정보 문의</h4>
-                    <p class="text-gray-500 leading-relaxed">기종과 상태를<br>간편하게 알려주세요.</p>
-                </div>
-                <div class="flex-1 text-center group step-line relative">
-                    <div class="relative z-10 inline-block mb-8">
-                        <div class="w-24 h-24 bg-white shadow-xl rounded-[2rem] flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 border border-gray-100">
-                            <i class="fas fa-paper-plane text-3xl"></i>
-                        </div>
-                        <span class="absolute -bottom-2 right-0 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-4 border-gray-50">02</span>
-                    </div>
-                    <h4 class="font-bold text-xl mb-3 text-gray-800">택배/방문 접수</h4>
-                    <p class="text-gray-500 leading-relaxed">무료 택배 이용 또는<br>매장 방문 접수</p>
-                </div>
-                <div class="flex-1 text-center group step-line relative">
-                    <div class="relative z-10 inline-block mb-8">
-                        <div class="w-24 h-24 bg-white shadow-xl rounded-[2rem] flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 border border-gray-100">
-                            <i class="fas fa-search-dollar text-3xl"></i>
-                        </div>
-                        <span class="absolute -bottom-2 right-0 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-4 border-gray-50">03</span>
-                    </div>
-                    <h4 class="font-bold text-xl mb-3 text-gray-800">정밀 검수</h4>
-                    <p class="text-gray-500 leading-relaxed">전문 감정사의<br>신속한 상태 확인</p>
-                </div>
-                <div class="flex-1 text-center group relative">
-                    <div class="relative z-10 inline-block mb-8">
-                        <div class="w-24 h-24 bg-white shadow-xl rounded-[2rem] flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 border border-gray-100">
-                            <i class="fas fa-wallet text-3xl"></i>
-                        </div>
-                        <span class="absolute -bottom-2 right-0 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-4 border-gray-50">04</span>
-                    </div>
-                    <h4 class="font-bold text-xl mb-3 text-gray-800">즉시 입금</h4>
-                    <p class="text-gray-500 leading-relaxed">최종 승인 후<br>5분 이내 입금 완료</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Real-time Price List Section -->
-    <section id="price-list" class="py-24 bg-white">
-        <div class="container mx-auto px-6">
-            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-                <div>
-                    <span class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 py-1.5 px-4 rounded-full text-sm font-bold mb-4">
-                        <span class="relative flex h-2 w-2">
-                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                          <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
-                        </span>
-                        LIVE PRICE
-                    </span>
-                    <h2 class="text-4xl font-extrabold text-gray-900">오늘의 매입 시세표</h2>
-                </div>
-                <div id="connection-status" class="text-sm font-medium text-gray-400 flex items-center gap-2">
-                    <i class="fas fa-circle text-[8px]"></i> 서버 연결 상태 확인 중...
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden overflow-x-auto custom-scrollbar">
-                <div class="p-8 bg-gray-50/50 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div class="relative w-full md:w-80">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="phone-search" placeholder="기종명을 검색해보세요..." 
-                            class="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-200 rounded-2xl text-base focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all shadow-sm">
-                    </div>
-                    <button onclick="fetchPhoneData()" class="flex items-center gap-2 text-sm font-bold text-blue-600 hover:bg-blue-50 px-5 py-2.5 rounded-xl transition-all">
-                        <i class="fas fa-sync-alt"></i> 시세 동기화
-                    </button>
-                </div>
-
-                <div id="phone-list-container" class="min-h-[400px] relative">
-                    <div id="loading-spinner" class="py-32 text-center">
-                        <div class="inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6"></div>
-                        <p class="text-gray-500 font-medium">실시간 시세를 불러오고 있습니다...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Banner Image Section -->
+    <!-- Banner Image Section (Middle) -->
     <section class="py-12 bg-white">
         <div class="container mx-auto px-6">
             <div class="rounded-[3rem] overflow-hidden relative h-[300px] lg:h-[450px]">
-                <img src="https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&q=80&w=2070" alt="고객 상담" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-transparent flex items-center px-10 lg:px-20">
+                <img id="middle-banner-img" src="service_info.png" onerror="handleImageError(this, 'middle')" alt="중고폰 거래 배너" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-r from-blue-900/70 to-transparent flex items-center px-10 lg:px-20">
                     <div class="text-white">
-                        <h3 class="text-3xl lg:text-4xl font-bold mb-4">상담만 받아보셔도 좋습니다.</h3>
-                        <p class="text-lg opacity-80 mb-8">부담 없는 1:1 채팅 견적, 지금 바로 문의하세요.</p>
-                        <a href="https://open.kakao.com/me/ponexchange" target="_blank" class="bg-yellow-400 text-black px-8 py-4 rounded-xl font-bold hover:bg-yellow-500 transition shadow-lg inline-block">카톡 상담원 연결</a>
+                        <h3 class="text-3xl lg:text-4xl font-bold mb-4">최고의 가치로 보답합니다.</h3>
+                        <p class="text-lg opacity-80 mb-8">모든 기종 매입 가능, 파손 폰도 문의주세요.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 매입 시세표 Section -->
+    <section id="price-list" class="py-24 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+                <div>
+                    <h2 class="text-4xl font-extrabold text-gray-900">오늘의 매입 시세표</h2>
+                    <p class="text-gray-500 mt-2">실시간 시장 상황이 반영된 정직한 시세입니다.</p>
+                </div>
+                <div id="connection-status" class="text-sm font-medium text-gray-400 flex items-center gap-2">
+                    <i class="fas fa-circle text-[8px]"></i> 상태 확인 중...
+                </div>
+            </div>
+            <div class="bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden overflow-x-auto custom-scrollbar">
+                <div id="phone-list-container" class="min-h-[400px] relative">
+                    <div id="loading-spinner" class="py-32 text-center">
+                        <div class="inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+                        <p class="text-gray-500 font-medium">데이터를 동기화하고 있습니다...</p>
                     </div>
                 </div>
             </div>
@@ -254,15 +217,11 @@
     </section>
 
     <!-- Contact Section -->
-    <section id="contact" class="py-24 bg-gray-50">
+    <section id="contact" class="py-24 bg-white">
         <div class="container mx-auto px-6">
             <div class="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12">
                 <div class="bg-blue-600 rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-10 opacity-10">
-                        <i class="fas fa-quote-right text-9xl"></i>
-                    </div>
                     <h2 class="text-4xl font-bold mb-8">빠른 문의 채널</h2>
-                    <p class="text-xl opacity-90 mb-12 leading-relaxed">기종 사진 한 장만 보내주셔도<br>대략적인 매입가를 알려드립니다.</p>
                     <div class="space-y-8">
                         <div class="flex items-center gap-6">
                             <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -279,18 +238,16 @@
                             </div>
                             <div>
                                 <div class="text-blue-200 text-sm mb-1">카카오톡 아이디</div>
-                                <div class="text-2xl font-bold flex items-center gap-2">
-                                    <i class="fab fa-talk text-yellow-400"></i> ponexchange
-                                </div>
+                                <div class="text-2xl font-bold">ponexchange</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-[3rem] p-12 shadow-xl border border-gray-100 flex flex-col justify-center text-center">
-                    <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=2070" alt="고객 서비스 상담" class="w-full h-48 object-cover rounded-3xl mb-10 shadow-lg">
+                <div class="bg-gray-50 rounded-[3rem] p-12 shadow-xl border border-gray-100 flex flex-col items-center text-center relative overflow-hidden">
+                    <img id="cs-service-img" src="cs_service.png" onerror="handleImageError(this, 'cs')" alt="고객 서비스 상담 이미지" class="w-full h-64 object-cover rounded-3xl mb-10 shadow-lg">
                     <h3 class="text-3xl font-extrabold mb-4 text-gray-900">비대면 1:1 상담</h3>
-                    <p class="text-gray-500 mb-10 leading-relaxed text-lg">기다릴 필요 없이 카카오톡으로<br>전문 상담원과 즉시 대화하세요.</p>
-                    <a href="https://open.kakao.com/me/ponexchange" target="_blank" class="w-full bg-yellow-400 text-black py-5 rounded-2xl font-bold text-xl hover:bg-yellow-500 transition shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2">
+                    <p class="text-gray-500 mb-8">기다릴 필요 없이 카카오톡으로 즉시 대화하세요.</p>
+                    <a href="https://open.kakao.com/me/ponexchange" target="_blank" class="w-full bg-yellow-400 text-black py-5 rounded-2xl font-bold text-xl hover:bg-yellow-500 transition shadow-xl flex items-center justify-center gap-2">
                         <i class="fas fa-comment"></i> 카카오톡 채널 바로가기
                     </a>
                 </div>
@@ -298,209 +255,111 @@
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 py-20 text-gray-400">
+    <!-- Footer (운영자 정보 원상 복구) -->
+    <footer class="bg-gray-900 py-16 text-gray-400">
         <div class="container mx-auto px-6">
-            <div class="grid lg:grid-cols-2 gap-16 mb-16 pb-16 border-b border-gray-800">
+            <div class="grid md:grid-cols-2 gap-12 mb-12 border-b border-gray-800 pb-12">
                 <div>
-                    <div class="text-3xl font-bold text-white mb-6 flex items-center gap-2">
-                        <i class="fas fa-mobile-alt text-blue-500"></i> 중고폰거래소
+                    <div class="text-2xl font-bold text-white mb-6">중고폰거래소</div>
+                    <div class="space-y-2 text-sm">
+                        <p>상호명: 중고폰거래소 | 대표자: 전종문</p>
+                        <p>사업자 등록번호: 337-13-02058</p>
+                        <p>통신판매업 신고번호: 2024-부산사상-0530호</p>
+                        <p>주소: 부산광역시 사상구 사상로 200, 2층 208-1호(괘법동, 엠시티)</p>
                     </div>
-                    <p class="max-w-md leading-relaxed text-lg">
-                        투명한 검수와 신뢰를 바탕으로 최상의 가격을 약속합니다. 고객님의 소중한 추억이 담긴 기기를 가장 가치 있게 매입합니다.
-                    </p>
                 </div>
-                <div class="grid sm:grid-cols-2 gap-10">
-                    <div>
-                        <h4 class="text-white font-bold text-lg mb-6">운영자 정보</h4>
-                        <ul class="space-y-3">
-                            <li><span class="text-gray-500 mr-2">상호명</span> 인피니티</li>
-                            <li><span class="text-gray-500 mr-2">대표자</span> 전종문</li>
-                            <li><span class="text-gray-500 mr-2">이메일</span> jmjeon99@naver.com</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-bold text-lg mb-6">CS CENTER</h4>
-                        <ul class="space-y-3">
-                            <li class="text-2xl font-bold text-white mb-2">010-5780-6629</li>
-                            <li>평일: 10:00 - 19:00</li>
-                            <li>토요일: 11:00 - 15:00</li>
-                            <li>일요일/공휴일 휴무</li>
-                        </ul>
+                <div class="md:text-right">
+                    <div class="text-white font-bold mb-6 text-lg">고객센터</div>
+                    <div class="space-y-2">
+                        <p class="text-2xl font-bold text-blue-500">010-5780-6629</p>
+                        <p>평일/주말: 09:00 ~ 21:00 (연중무휴)</p>
+                        <p>Email: jmjeon99@naver.com</p>
                     </div>
                 </div>
             </div>
-            <div class="text-center text-sm">
-                <div>&copy; 2026 중고폰거래소 (Infinity). All Rights Reserved.</div>
+            <div class="text-center text-xs opacity-50">
+                <p>&copy; 2026 중고폰거래소 (Infinity). All Rights Reserved.</p>
+                <p class="mt-2">본 사이트는 중고 휴대폰 매입 전문 서비스로 데이터 보안 파기를 보장합니다.</p>
             </div>
         </div>
     </footer>
 
     <script>
-        let phoneData = [];
-        const API_URL = 'https://predoubtful-unomnisciently-tracee.ngrok-free.dev/api/phones';
-        
-        const mockData = [
-            { maker: 'Apple', model: 'iPhone 15 Pro Max', storage: '256GB', grade: 'S급', price: 1450000 },
-            { maker: 'Apple', model: 'iPhone 15 Pro', storage: '256GB', grade: 'S급', price: 1250000 },
-            { maker: 'Samsung', model: 'Galaxy S24 Ultra', storage: '512GB', grade: 'S급', price: 1350000 },
-            { maker: 'Samsung', model: 'Galaxy Z Fold 5', storage: '512GB', grade: 'A급', price: 950000 },
-            { maker: 'Apple', model: 'iPhone 14 Pro', storage: '128GB', grade: 'A급', price: 880000 }
-        ];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchPhoneData();
-            document.getElementById('phone-search').addEventListener('input', (e) => {
-                filterAndRender(e.target.value.toLowerCase().trim());
-            });
-        });
-
         async function fetchPhoneData() {
             const container = document.getElementById('phone-list-container');
             const statusLabel = document.getElementById('connection-status');
-            
-            container.innerHTML = `
-                <div class="py-32 text-center">
-                    <div class="inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6"></div>
-                    <p class="text-gray-500 font-medium">데이터를 연결하는 중입니다...</p>
-                </div>
-            `;
+            let phoneData = [];
 
             try {
                 const response = await fetch(API_URL, {
                     method: 'GET',
                     headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
-                
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const rawData = await response.json();
-                
-                let extractedData = null;
-                if (Array.isArray(rawData)) {
-                    extractedData = rawData;
-                } else if (rawData && typeof rawData === 'object') {
-                    const possibleKeys = ['data', 'phones', 'list', 'items', 'result'];
-                    for (const key of possibleKeys) {
-                        if (Array.isArray(rawData[key])) {
-                            extractedData = rawData[key];
-                            break;
-                        }
-                    }
-                    if (!extractedData && Object.keys(rawData).length > 0) extractedData = [rawData];
-                }
-
-                if (extractedData && Array.isArray(extractedData)) {
-                    phoneData = extractedData;
-                    statusLabel.innerHTML = '<span class="flex items-center gap-1.5"><i class="fas fa-circle text-[8px] text-green-500"></i> 실시간 서버 연결됨</span>';
-                    container.innerHTML = '';
-                    renderTable(phoneData, container);
-                    updateTicker(phoneData);
-                } else {
-                    throw new Error('Data structure error');
-                }
-
+                if (!response.ok) throw new Error("API Offline");
+                phoneData = await response.json();
+                statusLabel.innerHTML = '<span class="text-green-500 font-bold">● 실시간 연결됨</span>';
             } catch (error) {
-                console.error('Fetch Error:', error);
-                statusLabel.innerHTML = '<span class="flex items-center gap-1.5"><i class="fas fa-circle text-[8px] text-orange-500"></i> 오프라인 샘플 모드</span>';
-                phoneData = mockData;
-                
-                container.innerHTML = `
-                    <div class="m-6 p-4 bg-orange-50 border border-orange-100 rounded-2xl text-sm text-orange-700 flex items-center gap-3">
-                        <i class="fas fa-info-circle text-lg"></i>
-                        <span>현재 실시간 서버에 접속할 수 없어 기본 시세표를 표시합니다.</span>
-                    </div>
-                `;
-                renderTable(phoneData, container);
-                updateTicker(phoneData);
+                console.warn("API 호출 실패, data.json 로드 시도:", error);
+                try {
+                    const localRes = await fetch('data.json');
+                    if (!localRes.ok) throw new Error("Local data.json not found");
+                    phoneData = await localRes.json();
+                    statusLabel.innerHTML = '<span class="text-orange-500 font-bold">● 로컬 데이터 로드됨</span>';
+                } catch (e) {
+                    phoneData = [
+                        { maker: 'Apple', model: 'iPhone 15 Pro', storage: '256GB', grade: 'S급', price: 1250000 },
+                        { maker: 'Samsung', model: 'Galaxy S24 Ultra', storage: '512GB', grade: 'S급', price: 1350000 },
+                        { maker: 'Apple', model: 'iPhone 14', storage: '128GB', grade: 'A급', price: 750000 }
+                    ];
+                    statusLabel.innerHTML = '<span class="text-red-500 font-bold">● 기본 데이터 모드</span>';
+                }
             }
-        }
-
-        function updateTicker(data) {
-            const ticker = document.getElementById('ticker-content');
-            if (!data || data.length === 0) return;
-
-            // 전광판용 아이템 생성 (반복하여 끊김 없게)
-            let tickerHtml = "";
-            const displayData = [...data, ...data]; // 데이터를 두 번 반복하여 무한 루프 구현
             
-            displayData.forEach(item => {
-                const price = typeof item.price === 'number' ? new Intl.NumberFormat('ko-KR').format(item.price) + '원' : (item.price || '문의');
-                tickerHtml += `
-                    <span class="ticker-item">
-                        <i class="fas fa-mobile-alt mr-2 text-blue-300"></i>
-                        ${item.model || item.name} [${item.grade || 'S급'}] 
-                        <span class="price">${price}</span>
-                    </span>
-                `;
-            });
-            ticker.innerHTML = tickerHtml;
-        }
-
-        function filterAndRender(term) {
-            const container = document.getElementById('phone-list-container');
-            const filtered = phoneData.filter(item => {
-                if (!item) return false;
-                const searchString = `${item.model || ''} ${item.maker || ''} ${item.name || ''}`.toLowerCase();
-                return searchString.includes(term);
-            });
-            
-            const existingAlert = container.querySelector('.bg-orange-50');
-            container.innerHTML = existingAlert ? existingAlert.outerHTML : '';
-            renderTable(filtered, container);
+            container.innerHTML = '';
+            renderTable(phoneData, container);
+            updateTicker(phoneData);
         }
 
         function renderTable(data, container) {
             if (!data || data.length === 0) {
-                const noDataMsg = document.createElement('div');
-                noDataMsg.className = 'py-32 text-center text-gray-400';
-                noDataMsg.innerText = '검색 결과가 없습니다.';
-                container.appendChild(noDataMsg);
+                container.innerHTML = '<p class="py-20 text-center text-gray-500">표시할 시세 데이터가 없습니다.</p>';
                 return;
             }
-
-            const firstItem = data[0];
             const table = document.createElement('table');
             table.className = 'w-full text-left border-collapse';
-            
-            const headerMap = { 
-                'model': '기종명', 'name': '기종명', 'title': '기종명',
-                'price': '매입가 (최고가)', 'cost': '매입가 (최고가)',
-                'grade': '등급', 'maker': '제조사', 
-                'storage': '용량', 'capacity': '용량' 
-            };
-            
-            const keys = Object.keys(firstItem).filter(k => 
-                !k.startsWith('_') && 
-                !['updatedAt', 'createdAt', 'id', 'v', 'version'].includes(k.toLowerCase())
-            );
+            const labels = ['제조사', '기종명', '용량', '등급', '최고가'];
+            const keys = ['maker', 'model', 'storage', 'grade', 'price'];
 
-            let headHtml = `<thead class="bg-gray-50 sticky top-0 z-10"><tr>`;
-            keys.forEach(k => {
-                headHtml += `<th class="px-8 py-5 text-sm font-bold text-gray-500 uppercase border-b border-gray-100 whitespace-nowrap">${headerMap[k.toLowerCase()] || k}</th>`;
-            });
-            headHtml += `</tr></thead>`;
+            let html = `<thead class="bg-gray-50"><tr>`;
+            labels.forEach(l => html += `<th class="px-8 py-5 text-sm font-bold text-gray-500 border-b border-gray-100">${l}</th>`);
+            html += `</tr></thead><tbody class="divide-y divide-gray-100">`;
             
-            let bodyHtml = `<tbody class="divide-y divide-gray-100">`;
             data.forEach(item => {
-                bodyHtml += `<tr class="hover:bg-blue-50/50 transition-colors group">`;
+                html += `<tr>`;
                 keys.forEach(k => {
-                    let val = item[k];
-                    let style = "px-8 py-5 text-base text-gray-700";
-                    if(k.toLowerCase().includes('price') || k.toLowerCase().includes('cost')) {
-                        const numVal = parseFloat(val);
-                        val = !isNaN(numVal) ? new Intl.NumberFormat('ko-KR').format(numVal) + '원' : val;
-                        style += " font-bold text-blue-600";
-                    }
-                    if(k.toLowerCase().includes('model')) style += " font-semibold text-gray-900";
-                    bodyHtml += `<td class="${style}">${val ?? '-'}</td>`;
+                    let val = item[k] || '-';
+                    if(k === 'price' && typeof val === 'number') val = new Intl.NumberFormat('ko-KR').format(val) + '원';
+                    html += `<td class="px-8 py-5 ${k==='price'?'text-blue-600 font-bold':'text-gray-700'}">${val}</td>`;
                 });
-                bodyHtml += `</tr>`;
+                html += `</tr>`;
             });
-            bodyHtml += `</tbody>`;
-            
-            table.innerHTML = headHtml + bodyHtml;
+            table.innerHTML = html + `</tbody>`;
             container.appendChild(table);
         }
+
+        function updateTicker(data) {
+            const ticker = document.getElementById('ticker-content');
+            if(!ticker) return;
+            let tickerHtml = "";
+            const displayData = data && data.length > 0 ? [...data, ...data] : [];
+            displayData.forEach(item => {
+                const price = typeof item.price === 'number' ? new Intl.NumberFormat('ko-KR').format(item.price) + '원' : item.price;
+                tickerHtml += `<span class="ticker-item"><i class="fas fa-bolt mr-2 text-yellow-400"></i>${item.model} [${item.grade}] <span class="price">${price}</span></span>`;
+            });
+            ticker.innerHTML = tickerHtml || '<span class="ticker-item">현재 거래 가능한 시세 정보를 확인 중입니다.</span>';
+        }
+
+        window.addEventListener('DOMContentLoaded', fetchPhoneData);
     </script>
 </body>
 </html>
